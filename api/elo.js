@@ -3,7 +3,7 @@ const axios = require("axios");
 const API = "https://open.faceit.com/data/v4";
 
 module.exports = async (req, res) => {
-    const nickname = (req.query.user || "KarMaAHD").trim();
+    const nickname = "KarMaAHD";
 
     try {
         // =========================
