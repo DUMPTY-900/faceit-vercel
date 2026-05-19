@@ -1,12 +1,15 @@
 {
-  "name": "faceit-vercel",
+  "name": "faceit-vercel-main",
   "version": "1.0.0",
-  "description": "FACEIT Twitch bot",
+  "description": "",
   "main": "index.js",
   "scripts": {
-    "start": "node api/elo.js"
+    "test": "echo \"Error: no test specified\" && exit 1"
   },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
   "dependencies": {
-    "axios": "^1.6.0"
+    "axios": "^1.16.1"
   }
 }
