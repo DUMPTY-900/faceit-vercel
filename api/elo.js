@@ -104,9 +104,13 @@ module.exports = async (req, res) => {
 
         const eloText =
             eloDiff >= 0 ? `+${eloDiff}` : `${eloDiff}`;
+        
+        const formattedWins = wins.toString().padStart(2, "0");
+
+        const formattedLosses = losses.toString().padStart(2, "0");
 
         res.status(200).send(
-            `${nickname} | ${currentElo} elo | (Today: ${eloText} ; W: ${wins} L: ${losses} ; ${kd}KD)`
+            `${nickname} | ${currentElo} elo | (Today: ${eloText} ; W: ${formattedWins} L: ${formattedLosses} ; ${kd}KD)`
         );
 
     } catch (err) {
