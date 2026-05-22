@@ -106,7 +106,7 @@ module.exports = async (req, res) => {
             eloDiff >= 0 ? `+${eloDiff}` : `${eloDiff}`;
 
         res.status(200).send(
-            `${nickname} | elo:${currentElo} | (today:${eloText} ; W:${wins} L:${losses} ; kd:${kd})`
+            `${nickname} | ${currentElo} elo | (Today: ${eloText} ; W: ${wins} L: ${losses} ; kd: ${kd})`
         );
 
     } catch (err) {
