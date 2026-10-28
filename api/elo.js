@@ -2,15 +2,16 @@ const axios = require("axios");
 
 const API = "https://open.faceit.com/data/v4";
 
+const PLAYER_ID = "ec19c7e0-66c1-41e2-82d8-2bb7642af60f"; // paste your FACEIT player ID
+
 module.exports = async (req, res) => {
-    const nickname = "KarMaAHD";
 
     try {
         // =========================
-        // PLAYER INFO
+        // PLAYER INFO (fetched by ID — permanent, unaffected by nickname changes)
         // =========================
         const playerRes = await axios.get(
-            `${API}/players?nickname=${nickname}`,
+            `${API}/players/${PLAYER_ID}`,
             {
                 headers: {
                     Authorization: `Bearer ${process.env.FACEIT_API_KEY}`
@@ -20,9 +21,12 @@ module.exports = async (req, res) => {
 
         const player = playerRes.data;
 
+        const nickname = player.nickname; // always up-to-date, even if they rename
         const playerId = player.player_id;
 
-        const game = player.games.cs2 || player.games.csgo;
+        const game = player.games?.cs2 || player.games?.csgo;
+
+        if (!game) throw new Error("No CS2/CSGO game data found for this player");
 
         const currentElo = game.faceit_elo;
 
@@ -49,22 +53,29 @@ module.exports = async (req, res) => {
         let totalKills = 0;
         let totalDeaths = 0;
 
-        for (const match of matches) {
-
+        // Filter to only today's matches before firing API calls
+        const todayMatches = matches.filter(match => {
             const matchDate = new Date(match.finished_at * 1000)
                 .toISOString()
                 .split("T")[0];
+            return matchDate === today;
+        });
 
-            if (matchDate !== today) continue;
-
-            const statsRes = await axios.get(
-                `${API}/matches/${match.match_id}/stats`,
-                {
-                    headers: {
-                        Authorization: `Bearer ${process.env.FACEIT_API_KEY}`
+        // Fetch all match stats in parallel instead of sequentially
+        const statsResponses = await Promise.all(
+            todayMatches.map(match =>
+                axios.get(
+                    `${API}/matches/${match.match_id}/stats`,
+                    {
+                        headers: {
+                            Authorization: `Bearer ${process.env.FACEIT_API_KEY}`
+                        }
                     }
-                }
-            );
+                )
+            )
+        );
+
+        for (const statsRes of statsResponses) {
 
             const rounds = statsRes.data.rounds || [];
 
@@ -86,6 +97,7 @@ module.exports = async (req, res) => {
 
                     const result = foundPlayer.player_stats.Result;
 
+                    // Note: +/-25 is an approximation; FACEIT ELO swings vary per match
                     if (result === "1") {
                         wins++;
                         eloDiff += 25;
@@ -100,11 +112,13 @@ module.exports = async (req, res) => {
         const kd =
             totalDeaths > 0
                 ? (totalKills / totalDeaths).toFixed(2)
-                : "0.00";
+                : totalKills > 0
+                    ? "∞"
+                    : "0.00";
 
         const eloText =
             eloDiff >= 0 ? `+${eloDiff}` : `${eloDiff}`;
-        
+
         const formattedWins = wins.toString().padStart(2, "0");
 
         const formattedLosses = losses.toString().padStart(2, "0");
